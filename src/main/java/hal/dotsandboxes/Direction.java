@@ -73,6 +73,6 @@ public enum Direction {
 			return DIRECTION_LEFT_UP_RIGHT_DOWN;
 		}
 		
-		throw new AssertionError("Codin' error ;D");
+		throw new AssertionError("Erreur de code dans Direction.java ;D");
 	}
 }
