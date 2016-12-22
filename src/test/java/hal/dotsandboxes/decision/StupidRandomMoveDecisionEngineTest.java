@@ -18,7 +18,7 @@ public class StupidRandomMoveDecisionEngineTest {
 
 	@Test
 	public void testFirstMoveFrom() {
-		Player p = new DefaultPlayer("bob", new StupidRandomMoveDecisionEngine());
+		Player p = new DefaultPlayer("Youssef", new StupidRandomMoveDecisionEngine());
 		GameState s = DefaultGameState.get(3, 3, ImmutableList.of(p));
 		Game game = DefaultGame.INSTANCE;
 		

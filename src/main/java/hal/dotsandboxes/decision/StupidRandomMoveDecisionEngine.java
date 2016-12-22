@@ -22,26 +22,23 @@ import com.google.common.collect.ImmutableList;
  * <li>If no box can be immediately completed a random edge is added.</li>
  * </ol>
  * 
- * @author Hal
+ * @author Youssef
  */
 public class StupidRandomMoveDecisionEngine implements DecisionEngine {
 	
-	// Don't care about replayability
 	private static final Random RANDOM = new Random();
 	
 	@Override
 	public Edge makeMove(GameState gameState, Player player, Game game) {
 		
-		// Try to find a move which completes a box immediately
+
 		Edge result = findEdgeCompletingBox(gameState);
 		if(result != null)
 			return result;
 		
-		// Otherwise just randomly pick an edge to add;
 		if(gameState.getMaxEdges() == gameState.getEdgeCount())
 			throw new IllegalStateException("Grid is full.");
 		
-		// Pick a random starting point to search from.
 		int startX = RANDOM.nextInt(gameState.getCellCountX());
 		int startY = RANDOM.nextInt(gameState.getCellCountY());
 		

@@ -30,7 +30,7 @@ import com.google.common.collect.Iterables;
 /**
  * A decision engine implementing the MiniMax algorithm in Java.
  * 
- * @author Hal
+ * @author Youssef
  */
 public class JavaMinimaxDecisionEngine implements DecisionEngine {
 	

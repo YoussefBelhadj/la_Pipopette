@@ -67,7 +67,7 @@ public class DotsAndBoxesText {
 			throw new AssertionError("never happens");
 		}
 		
-		// Start the game
+		// Lance le jeu
 		ImmutableList<Player> players = Players.makePlayers(options);
 		Preconditions.checkState(players.size() == 2, "unexpected player " +
 				"count received from Players.makePlayers");
@@ -122,7 +122,7 @@ public class DotsAndBoxesText {
 	
 	public void play() {
 		
-		// Print the title with an underline below.
+		// Affiche le titre et saute une ligne
 		mOut.println(StringUtils.center(Values.TITLE, mOutWidth));
 		mOut.println(StringUtils.center(StringUtils.repeat(
 				Values.TITLE_UNDERSCORE, Values.TITLE.length()), mOutWidth));
@@ -132,11 +132,11 @@ public class DotsAndBoxesText {
 		mOut.println(Values.INTRO_MSG);
 		mOut.println();
 		
-		// Print a header identifying the two players
+		// Identification des deux joueurs
 		printPlayerAnnounce();
 		mOut.println();
 		
-		// Randomise player order
+		// Choix de l'ordre de jeu aléatoire
 		final List<Player> players = RANDOM.nextBoolean() ? 
 				ImmutableList.of(mPlayer1, mPlayer2) :
 				ImmutableList.of(mPlayer2, mPlayer1);
@@ -148,23 +148,22 @@ public class DotsAndBoxesText {
 		
 		while(!mGame.isGameCompleted(state)) {
 			
-			// Find who's going next
+			// Qui joue après ?
 			final Player next = mGame.getNextPlayer(state);
 			
-			// Print the turn start message
+			// Affiche le message du tour
 			mOut.format(Values.TURN_START + "\n", turn, next.getName());
 			
-			// Let them take their turn
+			// Changement de joueur
 			GameState newState = mGame.nextMove(state);
 			
-			// Report what they did..
+			// Résultat du tour
 			Edge move = newState.getNewestEdge();
 			mOut.format(Values.TURN_RESULT, next.getName(),
 					move.getCanX(), move.getCanY(), 
 					move.getCanDirection().toString());
 			
-			// Print a message if the move completed any cells (at most 2 can be 
-			// completed by any move).
+			// Affiche un message si un carré est effectué
 			switch(newState.getCompletedCellCount() - 
 					state.getCompletedCellCount()) {
 				case 1: mOut.print(Values.TURN_RESULT_COMPLETED_1);
@@ -175,16 +174,16 @@ public class DotsAndBoxesText {
 			
 			boolean gameOver = mGame.isGameCompleted(newState);
 			if(!gameOver) {
-				// Ask if the board should be printed
+				// Demander à afficher le jeu
 				mOut.print(Values.PROMPT_SHOW_BOARD);
 				
-				// If we're auto answering yes print a yes for consistency
+				// Réponse oui automatique
 				if(mAlwaysShowBoard) 
 					mOut.print("yes");
 			}
 			if(mAlwaysShowBoard || gameOver || 
 					InputUtils.askYesNoQuestion(System.in, false)) {
-				mOut.println(); // clear the user input line
+				mOut.println(); // Masquer la saisie du joueur
 				mOut.println();
 				printBoard(newState);
 			}
@@ -207,7 +206,7 @@ public class DotsAndBoxesText {
 			mOut.println(String.format(Values.RESULT_WINNER, (score1 > score2 ? 
 					p1 : p2).getName()));
 		
-		// Print final scores
+		// Affiche le score final
 		mOut.format(Values.SCORE + "\n", p1.getName(), 
 				mGame.getScore(state, p1));
 		mOut.format(Values.SCORE + "\n", p2.getName(), 
@@ -215,8 +214,6 @@ public class DotsAndBoxesText {
 	}
 	
 	/**
-	 * Gives the spacing required on either side of str to centre it in an area 
-	 * of the specified width.
 	 *  
 	 * @param str The string to centre.
 	 * @param width The width of the area to centre the string in.
@@ -227,8 +224,6 @@ public class DotsAndBoxesText {
 	}
 	
 	/**
-	 * Gives the spacing required on either side of a string of width 
-	 * {@code strWidth} to centre it in an area of the specified width.
 	 *  
 	 * @param strWidth The width of the string to centre.
 	 * @param width The width of the area to centre the string in.
@@ -245,7 +240,6 @@ public class DotsAndBoxesText {
 	}
 	
 	/**
-	 * Tries to format the name and score into a string of availableWidth.
 	 *  
 	 * @param availableWidth
 	 * @param name
@@ -261,7 +255,6 @@ public class DotsAndBoxesText {
 		String compressedName = StringUtils.abbreviate(name, nameSpace);
 		final String out = String.format(Values.SCORE, compressedName, score);
 		
-		// Ensure the output is at least availableWidth in length
 		return out;
 	}
 	
