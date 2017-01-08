@@ -251,88 +251,75 @@ in_range(Min, Max, N) :-
 %
 
 minimax(GameState, FavoredPlayer, Depth, Result) :-
-	% The recursive case of minimax. Here we generate a new gamestate for 
-	% each possible move that can be made at this depth and recursivley 
-	% evaluate the new states with minimax.
+	% Pour chaque déplacement possible (à cette profondeur)
+	% On génère un nouvel état de jeu
 	
-	% Depth must be greater than zero otherwise we can't recurse.
+	% Il faut que death > 0
 	Depth > 0,
 	
-	% Find the player who is to move this round
+	% Trouve quel joueur joue ce tour ci
 	next_player(GameState, Player),
 	
-	% Collect all possible edges we can add in a list
+	% Récupérer toutes les lignes possibles du tour
 	findall(Edge, state_open_edge(GameState, Edge), Edges),
 	
-	% Evaluate all possible moves from this point by mapping apply_edge onto
-	% the list of edges and collecting the resulting move(Edge, Score) pairs
-	% in a list.
+	% Evaluer tout les mouvement possibles à ce stade 
+	% et collecter move(Edge, Score)
+	% dans une liste
 	map_tr(apply_edge(GameState, FavoredPlayer, Depth, Player),
 		Edges, % The list of possible edges
 		Moves), % A will be a list of move(Edge, Score) elements
 	
-	% Sort the moves by score
+	% On trie les mouvements par score
 	sort(Moves, SortedMoves),
 	
-	% Find the score we wish to return. We will return a random move who has
-	% a score equal to this.
+	% Ici on décide de quel score retourner (résultat du minmax.
+	% Si deux scores sont identiques, on choisira aléatoirement l'un des deux
 	(FavoredPlayer == Player ->
-		% If the current player is the favored player we select the 
-		% highest move from the options, unifying our score and move
-		% variables with this best move's score and edge.
+		% Si le joueur en cours est celui pour lequel la décision doit être prise,
+		% on choisi alors le score le plus haut avec le mouvement qui lui correspond
 		last(SortedMoves, move(TargetScore, _)) ;
-		% Otherwise we assume the opponent will make the worst move for
-		% us so we select the lowest scoring move (the head of the list)
+		% Dans le cas contraire, on imagine que le l'adversaire va choisir le pire score pour
+		% nous, donc on choisi le score le plus bas
 		[move(TargetScore, _)|_] = SortedMoves), 
 	
-	% Get a list containing only optimal moves
+	% Obtenir une liste contenant les solution optimales
 	filter(move_with_score(TargetScore), SortedMoves, OptimalMoves),
 	
-	% Select a random element from the optimal moves and unify it with 
-	% Result
+	% Sélectionnez un élément aléatoire parmi les mouvements optimaux
+	% et l'associer avec le résultat (Result)
 	random_element(OptimalMoves, Result), !.
 
 minimax(GameState, FavoredPlayer, 0, move(Score, _)) :-
-	% The first recursion base case. When depth is 0 we're not allowed to
-	% expand any further child states (e.g. try out moves) so we just have
-	% to evaluate the board's utility for our favored player.
+	% Lorsque la profondeur est de 0, nous de pouvons pas continuer à cherchez
+	% l'état des enfants (du coup d'après dans l'arbre), nous n'avons donc qu'à 
+	% choisir la meilleure solution possible. 
 	evaluate_board(GameState, FavoredPlayer, Score), !.
 
 minimax(GameState, FavoredPlayer, _, move(Score, _)) :-
-	% The second recursion base case. When no more moves can be made in the
-	% board we evaluate the board and stop recursing.
+	% Plus de mouvements possibles
 	no_moves_left(GameState),
 	evaluate_board(GameState, FavoredPlayer, Score), !.
 
 %% apply_edge(+GameState, +FavoredPlayer, +CallerDepth, +Player, +Edge, -Result)
 % 
-% Constructs a new state by adding the provided Edge to the GameState and 
-% evaluates the resulting gamestate using minimax, giving the score and edge in 
-% Result.
-%
-% This predicate is used by maplist in minimax to recursivley call minimax. In
-% that instance, the last two parameters are not specified as they are added by
-% maplist when it calls this predicate.
+% Créer le nouvel état en y ajoutant le dernier résultat donnant
+%le score ainsi que le mouvement effectué
 %
 apply_edge(GameState, FavoredPlayer, CallerDepth, Player, Edge, Result):-
 	Depth is CallerDepth - 1,
 	
-	% Construct a new gamestate with the provided edge added by the player
+	% Créer le nouvel étant en y ajoutant le bord joué 
 	state_put_edge(GameState, Edge, Player, NewState),
 	
-	% Call minimax on the new state to find its score
+	% minmax sur le nouvel etat
 	minimax(NewState, FavoredPlayer,  Depth, move(Score, _)),
-	
-	% unify result with a move representing the edge applied and the score 
-	% it resulted in.
 	Result = move(Score, Edge).
 
 move_with_score(Score, move(Score, _)).
 
 %% evaluate_board(+GameState, +FavoredPlayer, -Score)
 %
-% Gives the board a value representing the utillity to the favored player.
-% Positive values are better for the favored player.
 %
 evaluate_board(GameState, FavoredPlayer, Score) :-
 	GameState = gamestate(Width, Height, _, [P1|[P2|_]]),
@@ -349,23 +336,23 @@ evaluate_board(GameState, FavoredPlayer, Score) :-
 
 %% no_moves_left(+GameState)
 % 
-% True if the gamestate has no more moves which could be made.
+% Vrai si il n'y a plus de mouvement disponibles (fin du jeu)
 % 
 no_moves_left(GameState):-
 	GameState = gamestate(Width, Height, _, _),
-	% Find the maximum number of edges a board of provided size can hold
+	% Trouver le maximum de bord (ligne) que le plateau puisse contenir
 	max_edge_count(Width, Height, MaxEdges),
 	
-	% Find the number of edges in the the state
+	% Nombre de bord dans l'état
 	edge_count(GameState, EdgeCount),
 	
-	% The board is full if EdgeCount is equal to MaxEdges.
+	% Le plateau est-il complet ?
 	EdgeCount >= MaxEdges.
 
 
 %% next_player(+GameState, -Player)
 %
-% Gives the player who is to make the next move given the gamestate.
+% Donne au joueur le prochain mouvement à fairecompte tenu de l'état de jeu.
 %
 next_player(GameState, Player):-
 	edge_count(GameState, 0),
@@ -373,17 +360,16 @@ next_player(GameState, Player):-
 next_player(GameState, Player):-
 	previous_player(GameState, PreviousPlayer),
 	(newest_edge_completed_cell(GameState, _, _) ->
-		% The previous player finished a cell so they get to play again
+		% Le joueur préçédent à completé un carré, il doit donc rejouer
 		Player = PreviousPlayer ;
-		
-		% unify player with the player who isn't the previous player
+
 		GameState = gamestate(_, _, _, [P1|[P2|_]]),
 		(PreviousPlayer = P1 -> Player = P2 ; Player = P1)).
 		
 
 %% previous_player(+GameState, -Player)
 %
-% The previous player to play is the player who added the most recent edge.
+% Le joueur précédent à jouer est le joueur qui a ajouté le bord le plus récent.
 %
 previous_player(GameState, Player):-
 	newest_edge(GameState, _, edge_data(player(Player), _)).
@@ -400,11 +386,6 @@ cell_uses_edge(GameState, edge(X, Y, _), Cell):-
 	Cell = cell(X, Y),
 	cell_completed_in_state(GameState, Cell, _, _).
 
-%% newest_edge_completed_cell(+GameState, -Edge, -Cell)
-%
-% The newest edge completed a cell if either of the cells adjacent to the edge
-% are completed.
-%
 newest_edge_completed_cell(GameState, Edge, Cell):-
 	newest_edge(GameState, Edge, _),
 	cell_uses_edge(GameState, Edge, Cell).
@@ -427,8 +408,7 @@ newest_edge_([Head|Rest], CurrentLargest, Largest):-
 
 %% max_edge_count(+Width, +Height, -Count)
 %
-% Count is the number of edges in a dots and boxes grid of the specified width
-% and height.
+% Compte le nombre de ligne possible en fonction de la taille du plateau
 %
 max_edge_count(Width, Height, Count):-
 	Count is 2 * (Width - 1) * (Height - 1) + (Width - 1) + (Height - 1).
@@ -445,9 +425,9 @@ edge_count(GameState, Count):-
 
 %% cell_in_grid(?Width, ?Height, ?Cell)
 %
-% Succeeds if the cell is a valid location in a grid of the given width and 
-% height.
+% Réussi si le carré existe dans le plateau aux dimentions données
 %
+
 cell_in_grid(Width, Height, Cell):-
 	in_range(0, Width, X),
 	in_range(0, Height, Y),
@@ -457,8 +437,7 @@ cell_in_grid(Width, Height, Cell):-
 %% cell_completed_in_state(+GameState, ?Cell, ?CompletingEdge, 
 %                          ?CompletingEdgeData)
 %
-% Succeeds if the specified cell has been completed in the gamestate. i.e. if
-% the cell has all 4 of its edges existing in the gamestate.
+% Réussi si le carré est complet (4 bords)
 %
 cell_completed_in_state(GameState, Cell, CompletingEdge, CompletingEdgeData):-
 	GameState = gamestate(Width, Height, _, _),
@@ -486,10 +465,6 @@ oldest_edge(Edge1, Edge2, Edge3, Edge4, OldestEdge):-
 	oldest_edge(Edge3, Edge4, Res2),
 	oldest_edge(Res1, Res2, OldestEdge).
 
-%% oldest_edge(+Edge1, +Edge2, ?OldestEdge)
-%
-% OldestEdge is the Edge-EdgeData pair with the largest age.
-%
 oldest_edge(Edge1, Edge2, OldestEdge):-
 	Edge1 = edge(_, _, _)-edge_data(_, age(Age1)),
 	Edge2 = edge(_, _, _)-edge_data(_, age(Age2)),
@@ -498,7 +473,7 @@ oldest_edge(Edge1, Edge2, OldestEdge):-
 
 %% edge_in_gamestate(+GameState, -Edge)
 %
-% Succeeds if the edge exists in the gamestate.
+% Réussi si le bord existe dans le plate	u
 % 
 edge_in_gamestate(GameState, Edge, EdgeData):-
 	GameState = gamestate(_, _, Edges, _),
@@ -512,7 +487,7 @@ cell_count(GameState, Player, Count):-
 
 %% random_element(+List, -Element).
 %
-% Element is a randomly chosen element from the List.
+% Element élément choisi aléatoiement dans la liste
 %
 random_element([], _):- fail.
 random_element(List, Element):-
@@ -521,45 +496,23 @@ random_element(List, Element):-
 	nth0(RandomIndex, List, Element), !.
 
 /*
- * I implemented the following predicates myself to replace the apply library I
- * had been using in SWI/Sicstus4 when I found that Sicstus 3 doesn't come with
- * it.
- *
- * I implemented left and right folds, map as well as a tail recursive version 
- * of right fold and map (as I suspected the non tail recursive versions were 
- * the cause of running out of my program running out of stack space, but this 
- * turned out not to be the case).
+ * J'ai implémenté les prédicats suivants moi-même pour remplacer
+ * la bibliothèque d'application que j'avais utilisé dans SWI / Sicstus4
+ * quand j'ai découvert que Sicstus 3 ne fonctionnait pas.
  */
 
-%% fold_left(+Predicate, +List, -Result)
-%
-% Performs a left fold on the List by calling the predicate on initially the
-% first and second members of the list, then calling predicate on the result
-% and the 3rd element and so on untill all elements of the list have been 
-% combined with the results of combining the previous elements.  
-%
 fold_left(Predicate, [Initial|List], Result):-
 	foldl_(List, Predicate, Initial, Result).
 
-%% foldl(+Predicate, +Initial, +List, -Result)
-%
-% The same as foldl/3 except the initial value is given explicitly instead of
-% being the first element of the list.
-%
 fold_left(Predicate, Initial, List, Result):-
 	foldl_(List, Predicate, Initial, Result).
 
-% The result of folding an empty list is the starting value
 foldl_([], _, Value, Result):-
 	Value = Result.
 foldl_([Head|Tail], Predicate, Value, Result):-
 	call_n(Predicate, [Value, Head, NewValue]),
 	foldl_(Tail, Predicate, NewValue, Result).
 
-%% foldr(+Predicate, +Initial, +List, -Result)
-%
-% Performs a right fold on the list, reducing it to Result.
-%
 fold_right(Predicate, Initial, List, Result):-
 	foldr_(List, Predicate, Initial, Result).
 foldr_([], _, Value, Result):- Value = Result.
@@ -567,14 +520,6 @@ foldr_([Head|Tail], Predicate, Value, Result):-
 	foldr_(Tail, Predicate, Value, TailResult),
 	call_n(Predicate, [Head, TailResult, Result]).
 
-%% map(+Predicate, +List, -Result)
-%
-% Each element of Result is the element of List at the same position after 
-% having applying predicate applied to it.
-%
-% The Predicate will be called with a list element and should unify the 
-% subsiquent parameter with the result to store in the result list.  
-%
 map(Predicate, List, Result):-
 	fold_right(map_apply(Predicate), [], List, Result).
 
@@ -586,23 +531,18 @@ cons_(First, Rest, [First|Rest]).
 
 plus_(A, B, Out):- Out is A + B.
 
-% Work around sicstus 3 not supporting call w/ variable arity
 call_n(Pred, ArgList):-
 	Pred =.. Term,
 	append(Term, ArgList, TermN),
 	ToCall =.. TermN,
 	call(ToCall).
 
-% Implementation of reverse tail-recursively using foldl
 reverse_(List, Reversed):-
 	fold_left(flip_cons_, [], List, Reversed).
 
 flip_cons_(A, B, Result):-
 	cons_(B, A, Result).
 
-% An implementation of fold_right (not normally tail recursive) which IS tail 
-% recursive thanks to fold_left (which is tail recursive) being used to 
-% implement it.
 fold_right_tr(Predicate, Initial, List, Result):-
 	reverse_(List, Reversed),
 	fold_left(call_flip_args_(Predicate), Initial, Reversed, Result).
@@ -610,15 +550,9 @@ fold_right_tr(Predicate, Initial, List, Result):-
 call_flip_args_(Predicate, First, Second, Result):-
 	call_n(Predicate, [Second, First, Result]).
 
-% A tail recursive implementation of the map higher order function.
 map_tr(Predicate, List, Result):-
 	fold_right_tr(map_apply(Predicate), [], List, Result).
 
-%% filter(+Predicate, +List, -Result)
-%
-% Result is a list containing every element of List for which Predicate(Element)
-% succeeds.
-%
 filter(Predicate, List, Result):-
 	fold_right_tr(filter_pred_(Predicate), [], List, Result).
 
@@ -628,12 +562,10 @@ filter_pred_(Predicate, Element, Rest, Out):-
 		;  Rest = Out).
 
 /*
- * The code below is purely for testing.
+ *
+ * Le code à partir d'ici est uniquement pour des tests
+ * d'exemples récupérés sur internet
  * 
- * Sicstus 4 and SWI prolog contain the PLUnit unit testing library for prolog.
- * Sicstus 3 doesn't come with it. These tests can run automatically using 
- * run_tests once the code is loaded if you use a version of prolog which 
- * supports PLUnit.
  */
 
 /*
